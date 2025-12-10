@@ -93,7 +93,7 @@
             word-break: break-word;
             text-align: center;
             width: 80%;
-            font-size: 16px;
+            font-size: 24px;
         }
         
         .booking-footer {
@@ -269,7 +269,7 @@
                             </div>
                             <div class="booking-row">
                                 <span class="booking-label">Prenotazione N:</span>
-                                <span class="booking-value" style="font-size: 16px;">#{{ '%05d'|format(booking.id) }}</span>
+                                <span class="booking-value">#{{ '%02d'|format(booking.id) }}</span>
                             </div>
                         </div>
                         
