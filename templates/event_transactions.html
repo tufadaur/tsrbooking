@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<h2 class="text-center mb-3">Transazioni per l'evento: {{ event_title }}</h2>
+<div class="text-center mb-4">
+    <a href="{{ url_for('generate_event_summary_pdf_route', event_id=event_id) }}" class="btn btn-warning me-2">
+        📊 Riepilogo PDF
+    </a>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-dark">&larr; Torna alla dashboard</a>
+</div>
+
+<div class="table-wrapper">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nome</th>
+                <th>Email/Note</th>
+                <th>Posti</th>
+                <th>Stato</th>
+                <th>Rendi Pagato</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transactions |sort(attribute='id') %}
+            <tr>
+                <td>{{ t.id }}</td>
+                <td>{{ t.name }}</td>
+                <td>{{ t.email }}</td>
+                <td>
+                    <span class="seats-count" onclick="showSeatsPopup('{{ t.seats }}', {{ t.id }})"
+                        title="Clicca per vedere i posti">
+                        {{ (t.seats.split(',')|length) if t.seats else 0 }} 📍
+                    </span>
+                </td>
+                <td>
+                    {% if t.status == 1 %}
+                    <span class="badge badge-pending">In attesa</span>
+                    {% elif t.status == 2 %}
+                    <span class="badge badge-paid">Pagato</span>
+                    {% elif t.status == 3 %}
+                    <span class="badge badge-validated">Da Pagare</span>
+                    {% elif t.status == 4 %}
+                    <span class="badge badge-ticket-validated">Validato</span>
+                    {% else %}
+                    <span class="badge badge-unknown">Sconosciuto</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if t.status == 3 %}
+                    <form method="post" action="{{ url_for('mark_paid', booking_id=t.id) }}"
+                        class="d-inline mark-paid-form">
+                        <button type="submit" class="btn-mark-paid-quick" title="Rendi Pagato"
+                            onclick="return confirm('Rendere pagato questo biglietto prenotato?')">
+                            💰
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="transaction-actions-dropdown">
+                        <select class="action-select" data-booking-id="{{ t.id }}" data-status="{{ t.status }}">
+                            <option value=""></option>
+                            <option value="edit">Modifica</option>
+                            {% if t.status in [2,4] %}
+                            <option value="pdf">PDF Biglietto</option>
+                            <option value="email">Reinvia Email</option>
+                            {% endif %}
+                            <option value="delete">Elimina</option>
+                        </select>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" style="text-align:center; color:#888;">Nessuna transazione trovata per questo evento.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Form nascosti per le azioni -->
+<form id="mark-paid-form" method="post" style="display:none;">
+    <input type="hidden" name="booking_id" id="mark-paid-booking-id">
+</form>
+
+<form id="delete-form" method="post" style="display:none;">
+    <input type="hidden" name="booking_id" id="delete-booking-id">
+</form>
+
+<form id="resend-form" method="post" style="display:none;">
+    <input type="hidden" name="booking_id" id="resend-booking-id">
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Gestione delle azioni dal menu a tendina
+        document.querySelectorAll('.action-select').forEach(function (select) {
+            select.addEventListener('change', function () {
+                const action = this.value;
+                const bookingId = this.dataset.bookingId;
+                const status = this.dataset.status;
+
+                if (!action) return;
+
+                // Reset select
+                this.selectedIndex = 0;
+
+                switch (action) {
+                    case 'edit':
+                        window.location.href = `/edit_transaction/${bookingId}`;
+                        break;
+
+                    case 'pdf':
+                        window.location.href = `/generate_ticket_pdf/${bookingId}`;
+                        break;
+
+                    case 'email':
+                        if (confirm('Reinviare l\'email di conferma?')) {
+                            const form = document.getElementById('resend-form');
+                            form.action = `/resend_email/${bookingId}`;
+                            form.submit();
+                        }
+                        break;
+
+                    case 'delete':
+                        if (confirm('Sei sicuro di voler eliminare questa transazione? I posti verranno liberati.')) {
+                            const form = document.getElementById('delete-form');
+                            form.action = `/delete_transaction/${bookingId}`;
+                            form.submit();
+                        }
+                        break;
+                }
+            });
+        });
+    });
+
+    // Funzione per mostrare popup con dettagli posti
+    function showSeatsPopup(seats, transactionId) {
+        const seatsList = seats ? seats.split(',').join(', ') : 'Nessun posto assegnato';
+        const popup = document.createElement('div');
+        popup.className = 'seats-popup';
+        popup.innerHTML = `
+            <div class="seats-popup-content">
+                <div class="seats-popup-header">
+                    <h4>Posti Transazione #${transactionId}</h4>
+                    <button class="seats-popup-close" onclick="closeSeatsPopup()">&times;</button>
+                </div>
+                <div class="seats-popup-body">
+                    <strong>Posti assegnati:</strong><br>
+                    <span class="seats-list">${seatsList}</span>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+
+        // Chiudi cliccando fuori
+        popup.addEventListener('click', function (e) {
+            if (e.target === popup) {
+                closeSeatsPopup();
+            }
+        });
+    }
+
+    function closeSeatsPopup() {
+        const popup = document.querySelector('.seats-popup');
+        if (popup) {
+            popup.remove();
+        }
+    }
+</script>
+{% endblock %}

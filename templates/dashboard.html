@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<div class="d-flex justify-between align-center mb-4">
+  <h2 class="mb-0">Dashboard Eventi</h2>
+  <a href="{{ url_for('add_event') }}" class="btn btn-success">+ Nuovo evento</a>
+</div>
+
+<div class="table-wrapper">
+  <table class="table dashboard-table">
+    <thead>
+      <tr>
+        <th>Evento</th>
+        <th>Data</th>
+        <th>Stato</th>
+        <th>Venduti</th>
+        <th>Prenotati</th>
+        <th>Elenco</th>
+        <th>Prenota</th>
+        <th>Azioni</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for e in events |sort(attribute='id') %}
+      <tr>
+        <td>{{ e.title }}</td>
+        <td>{{ e.date }}</td>
+        <td>
+          {% if e.visible == 1 %}
+          <span class="badge badge-visible">Visibile</span>
+          {% else %}
+          <span class="badge badge-hidden">Nascosto</span>
+          {% endif %}
+        </td>
+        <td>{{ e.sold }}</td>
+        <td>{{ e.validated }}</td>
+        <td>
+          <a href="{{ url_for('event_transactions', event_id=e.id) }}" class="btn btn-info btn-sm">📊 Elenco</a>
+        </td>
+        <td>
+          <a href="{{ url_for('admin_book_seats', event_id=e.id) }}" class="btn btn-warning btn-sm">💰 Prenota</a>
+        </td>
+        <td>
+          <div class="dashboard-actions-dropdown">
+            <select class="action-select-dashboard" data-event-id="{{ e.id }}" data-visible="{{ e.visible }}">
+              <option value="">-- Azioni --</option>
+              <option value="edit">✏️ Modifica</option>
+              {% if e.visible == 1 %}
+              <option value="hide">🙈 Nascondi</option>
+              {% else %}
+              <option value="show">👁️ Mostra</option>
+              {% endif %}
+            </select>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="8" style="text-align:center; color:#888;">Nessun evento presente.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Form nascosti per le azioni -->
+<form id="hide-form" method="post" style="display:none;">
+  <input type="hidden" name="event_id" id="hide-event-id">
+</form>
+
+<form id="show-form" method="post" style="display:none;">
+  <input type="hidden" name="event_id" id="show-event-id">
+</form>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Gestione delle azioni dal menu a tendina dashboard
+    document.querySelectorAll('.action-select-dashboard').forEach(function (select) {
+      select.addEventListener('change', function () {
+        const action = this.value;
+        const eventId = this.dataset.eventId;
+        const isVisible = this.dataset.visible === '1';
+
+        if (!action) return;
+
+        // Reset select
+        this.selectedIndex = 0;
+
+        switch (action) {
+          case 'edit':
+            window.location.href = `/event/${eventId}/edit`;
+            break;
+
+          case 'hide':
+            if (confirm('Sei sicuro di voler nascondere questo evento dalla vista pubblica?')) {
+              const form = document.getElementById('hide-form');
+              form.action = `/event/${eventId}/hide`;
+              form.submit();
+            }
+            break;
+
+          case 'show':
+            if (confirm('Sei sicuro di voler rendere visibile questo evento?')) {
+              const form = document.getElementById('show-form');
+              form.action = `/event/${eventId}/show`;
+              form.submit();
+            }
+            break;
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}
