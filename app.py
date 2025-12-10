@@ -437,6 +437,28 @@ def event_transactions(event_id):
         transactions=transactions
     )
 
+@app.route('/event/<int:event_id>/bookings_print')
+@login_required
+def bookings_print(event_id):
+    """Pagina stampabile con riepilogo prenotazioni (4 per A4)"""
+    event = get_event_by_id(event_id)
+    if not event:
+        flash('Evento non trovato.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Ottieni tutte le prenotazioni dell'evento
+    bookings = get_event_transactions(event_id)
+    
+    if not bookings:
+        flash('Nessuna prenotazione trovata per questo evento.', 'warning')
+        return redirect(url_for('event_transactions', event_id=event_id))
+    
+    return render_template(
+        'bookings_print.html',
+        event=event,
+        bookings=bookings
+    )
+
 @app.route('/resend_email/<int:booking_id>', methods=['POST'])
 @login_required
 def resend_email(booking_id):

@@ -17,6 +17,7 @@
         <th>Venduti</th>
         <th>Prenotati</th>
         <th>Elenco</th>
+        <th>Stampa</th>
         <th>Prenota</th>
         <th>Azioni</th>
       </tr>
@@ -39,6 +40,9 @@
           <a href="{{ url_for('event_transactions', event_id=e.id) }}" class="btn btn-info btn-sm">📊 Elenco</a>
         </td>
         <td>
+          <a href="{{ url_for('bookings_print', event_id=e.id) }}" class="btn btn-primary btn-sm">🖨️ Stampa</a>
+        </td>
+        <td>
           <a href="{{ url_for('admin_book_seats', event_id=e.id) }}" class="btn btn-warning btn-sm">💰 Prenota</a>
         </td>
         <td>
@@ -57,7 +61,7 @@
       </tr>
       {% else %}
       <tr>
-        <td colspan="8" style="text-align:center; color:#888;">Nessun evento presente.</td>
+        <td colspan="9" style="text-align:center; color:#888;">Nessun evento presente.</td>
       </tr>
       {% endfor %}
     </tbody>

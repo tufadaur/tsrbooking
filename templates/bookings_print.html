@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riepilogo Prenotazioni - {{ event.title }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .print-container {
+            background: white;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+        
+        /* Stile A4 Landscape - 4 schede per foglio */
+        .page {
+            width: 297mm;
+            height: 210mm;
+            padding: 10mm;
+            margin-bottom: 20px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 8mm;
+            page-break-after: always;
+            page-break-inside: avoid;
+        }
+        
+        .booking-card {
+            border: 2px solid #744210;
+            border-radius: 8px;
+            padding: 10mm;
+            background: #fafaf8;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            page-break-inside: avoid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .booking-header {
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .event-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B0000;
+            margin-bottom: 4px;
+        }
+        
+        .booking-content {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #333;
+        }
+        
+        .booking-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            align-items: baseline;
+        }
+        
+        .booking-label {
+            font-weight: 600;
+            color: #2d3748;
+            width: 45%;
+            font-size: 13px;
+        }
+        
+        .booking-value {
+            color: #744210;
+            font-weight: 500;
+            word-break: break-word;
+            text-align: center;
+            width: 80%;
+            font-size: 16px;
+        }
+        
+        .booking-footer {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 8px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .booking-code {
+            font-size: 18px;
+            font-weight: bold;
+            color: #8B0000;
+            letter-spacing: 2px;
+        }
+        
+        .controls {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .controls button {
+            background: #744210;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        
+        .controls button:hover {
+            background: #5a3108;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .page {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+                margin: 0;
+            }
+            
+            .controls {
+                display: none;
+            }
+            
+            .print-container {
+                max-width: none;
+            }
+            
+            .page {
+                margin-bottom: 0;
+                box-shadow: none;
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+            
+            .print-info {
+                display: none;
+            }
+            
+            .title-section {
+                display: none;
+            }
+            
+            /* Orientamento landscape per stampa */
+            @page {
+                size: A4 landscape;
+                margin: 0;
+                padding: 0;
+            }
+        }
+        
+        .print-info {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        
+        .print-info p {
+            color: #1565c0;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .title-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .title-section h1 {
+            color: #2d3748;
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+        
+        .title-section p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        @media print {
+            .title-section {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button onclick="window.print()">🖨️ Stampa</button>
+        <button onclick="window.history.back()">← Indietro</button>
+    </div>
+    
+    <div class="title-section">
+        <h1>{{ event.title }}</h1>
+        <p>Riepilogo Prenotazioni - {{ event.date }} ore {{ event.time }}</p>
+    </div>
+    
+    <div class="print-info">
+        <p><strong>{{ bookings|length }} prenotazioni totali</strong> | 4 per pagina A4 Landscape</p>
+        <p>Premi CTRL+P (o CMD+P su Mac) per stampare in orizzontale</p>
+    </div>
+    
+    <div class="print-container">
+        {% set cards_per_page = 4 %}
+        {% set total_pages = (bookings|length + cards_per_page - 1) // cards_per_page %}
+        
+        {% for page_num in range(total_pages) %}
+            <div class="page">
+                {% set start_idx = page_num * cards_per_page %}
+                {% set end_idx = start_idx + cards_per_page %}
+                
+                {% for booking in bookings[start_idx:end_idx] %}
+                    <div class="booking-card">
+                        <div class="booking-header">
+                            <div class="event-title">{{ event.title }}</div>
+                        </div>
+                        
+                        <div class="booking-content">
+                            <div class="booking-row">
+                                <span class="booking-label">Nome:</span>
+                                <span class="booking-value">{{ booking.name }}</span>
+                            </div>
+                            <div class="booking-row">
+                                <span class="booking-label">Posti Totali:</span>
+                                <span class="booking-value">{{ booking.seats.split(',')|length }}</span>
+                            </div>
+                            <div class="booking-row">
+                                <span class="booking-label">Prenotazione N:</span>
+                                <span class="booking-value" style="font-size: 16px;">#{{ '%05d'|format(booking.id) }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="booking-footer">
+                            <div class="booking-code">{{ booking.seats }}</div>
+                           
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
